@@ -27,8 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants">
             <strong>Participants:</strong>
-            <ul>
-              ${details.participants.map(participant => `<li>${participant}</li>`).join('')}
+            <ul class="participants-list">
+              ${details.participants.map(participant => `
+                <li class="participant-item">
+                  <span>${participant}</span>
+                  <span class="delete-icon" title="Eliminar" data-activity="${name}" data-participant="${participant}">&#128465;</span>
+                </li>
+              `).join('')}
             </ul>
           </div>
         `;
@@ -68,6 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // Actualiza la lista tras registro exitoso
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -84,6 +90,28 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.className = "error";
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+  });
+
+  // Listener para eliminar participante (solo una vez)
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-icon")) {
+      const activity = event.target.getAttribute("data-activity");
+      const participant = event.target.getAttribute("data-participant");
+      if (window.confirm(`¿Eliminar a ${participant} de ${activity}?`)) {
+        try {
+          const response = await fetch(`/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(participant)}`, {
+            method: "POST"
+          });
+          if (response.ok) {
+            fetchActivities();
+          } else {
+            alert("No se pudo eliminar al participante.");
+          }
+        } catch (error) {
+          alert("Error al eliminar participante.");
+        }
+      }
     }
   });
 
